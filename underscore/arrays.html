@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>arrays的方法</title>
+	<script src="../public/js/underscore-not-modified.js"></script>
+
+	<!-- 新 Bootstrap 核心 CSS 文件 -->
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+
+	<!-- 可选的Bootstrap主题文件（一般不用引入） -->
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+
+	<!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+	<script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+
+	<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+	<script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+	<div class="container">
+		<h4>_.first()中的第三个参数guard的用处。</h4>
+		<h4>map的用法</h4>
+		<p>
+			<code>
+			var collections = [{"name": "heke"}, {"age": 26}, {"address": "chengdu"}]; <br>
+			_.map(collections, {"name": "heke"}); <br>
+			// [true, false, false];
+			</code>
+		</p>
+	</div>
+</body>
+<script>	
+	var hk = {};
+
+	var test_obj = {"name": "heke", "age": 26, "address": "chengdu"};
+	var collections = [{"name": "heke"}, {"age": 26}, {"address": "chengdu"}];
+
+	var subtract = function(a, b) { 
+		var result = b - a;
+		console.log("subtract's result is: ", result);
+		return result; 
+	};
+
+	var test = function(name){
+		console.log("hello I'm test!");
+		return "hello: " + name;
+	};
+
+	var testArr = [5, 4, 3, 2, 1, false, undefined, NaN, 0];
+
+	hk.first = function(array, n){
+		var n = n ? n : 1;
+
+		return array.slice(0, n);
+	};
+
+	hk.compact = function(array){
+		var new_arr = [];
+		for(var i=0, length=array.length; i<length; i++){
+			if(!!array[i]){
+				new_arr.push(array[i]);
+			}
+		}
+		return new_arr;
+	}
+
+</script>
+</html>
