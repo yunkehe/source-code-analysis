@@ -22,6 +22,5 @@ function handleStop(e){
 	console.log("handleStop e", e);
 };
 
-_obj.on("go", handleGo);
-_obj.on("stop", handleStop);
-_obj.on("change", handleChange);
+_obj.on({"go": handleGo, "stop": handleStop, "change": handleChange});
+
