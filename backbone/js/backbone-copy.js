@@ -13,6 +13,23 @@
 			events.push({callback: callback, context: context, ctx: context || this});
 		},
 
+		off: function(name, callback, context){
+			if(!this._events || !eventsApi(this, "off", name, [callback, context]) )return this;
+
+			// 删除所有绑定的事件
+			if(!name && !callback && !context){
+				this._events = void 0;
+				return this;
+			};
+
+			var names = name ? [name] : _.keys(this._events);
+			for(var i=0,length=names.length; i<length; i++){
+
+
+			}
+
+		},
+
 		trigger: function(name){
 
 			var events = this._events[name];
