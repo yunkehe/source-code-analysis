@@ -89,7 +89,8 @@
     },
 
     // Bind an event to only be triggered a single time. After the first time
-    // the callback is invoked, it will be removed.
+    // the callback is invoked, it will be remo
+    // ved.
     once: function(name, callback, context) {
       if (!eventsApi(this, 'once', name, [callback, context]) || !callback) return this;
       var self = this;
