@@ -137,7 +137,28 @@
 				return this;
 			}
 
+			if(eventSplitter.test(name)){
+				var names = name.split(eventSplitter);
+				for(var i=0, len = names.length; i<len; i++){
+					this.listenToOnce(obj, names[i], callback);
+				}
+				return this;
+			}
 
+			if(!callback)return this;
+
+			// 尚无清除这段代码的意思
+			var once = _.once(function(){
+				this.stopListening(obj, name, once);
+				callback.apply(this, arguments);
+			});
+			// 这是 什么意思
+			once._callback = callback;
+			return this.listeningTo(obj, name, once);
+		},
+
+		stopListening: function(obj, name, callback){
+			var listenTo = this._listeningTo;
 		}
 	};
 
