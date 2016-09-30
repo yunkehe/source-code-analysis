@@ -44,6 +44,17 @@
 		  return this;
 		},
 
+		once: function(name, callback, context){
+			if (!eventsApi(this, 'once', name, [callback, context]) || !callback) return this;
+			var self = this;
+			var once = _.once(function() {
+			  self.off(name, once);
+			  callback.apply(this, arguments);
+			});
+			once._callback = callback;
+			return this.on(name, once, context);
+		},
+
 		off: function(name, callback, context){
 			if(!this._events || !eventsApi(this, "off", name, [callback, context]) )return this;
 
@@ -69,8 +80,8 @@
 
 				// 找到剩余的事件
 				var remaining = [];
-				for(var j=0, l=events.length; k<l; k++){
-					var event = events[k];
+				for(var j=0, l=events.length; j<l; j++){
+					var event = events[j];
 					if(
 						callback && callback !== event.callback &&
 						callback !== event.callback._callback ||
@@ -103,6 +114,29 @@
 			if(events) triggerEvents(events, args);
 			if(eventsAll) triggerEvents(eventsAll, args);
 			return this;
+
+		},
+
+		listenTo: function(obj, name, callback){
+			// 监听对象上保存被监听对象, 通过被监听对象_listenId标识
+			var listeningTo = this._listeningTo || (this._listeningTo = {});
+			// obj上生成唯一 _listenId, 供监听对象使用
+			var id = obj._listenId || (obj._listenId = _.unique('l'));
+			listeningTo[id] = obj;
+			if(!callback && typeof name === 'object') callback = this;
+			obj.on(name, callback, this);
+			// 返回监听对象
+			return this;
+		},
+
+		listenToOnce: function(obj, name, callback){
+			// 遍历对象 {'change': handleChange, 'go': handleGo}
+			// 拆分后再次执行 下次执行跳过此步骤 perfect!
+			if(typeof name === 'object'){
+				for(var event in name) this.listenToOnce(obj, event, name[event]);
+				return this;
+			}
+
 
 		}
 	};
