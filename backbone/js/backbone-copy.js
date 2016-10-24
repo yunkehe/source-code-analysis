@@ -159,7 +159,18 @@
 
 		stopListening: function(obj, name, callback){
 			var listenTo = this._listeningTo;
-		}
+			if(!listenTo) return this;
+			var remove = !name && !callback;
+			if(!callback && typeof name === 'object') callback = this;
+			if(obj)(listeningTo = {})[obj._listenId] = obj;
+			for(var id in listeningTo){
+				obj = listeningTo[id];
+				obj.off(name, callback, this);
+				if(remove || _.isEmpty(obj._events))delete this._listeningTo[id];
+			}
+			return this;
+		},
+		
 	};
 
 	var eventsSpliter = /\s+/;
