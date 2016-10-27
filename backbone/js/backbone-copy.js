@@ -13,7 +13,7 @@
 	}
 
 }(this, function(root, Backbone, _, $){
-
+	// 传入了一个空对象
 	var perviousBackbone = root.Backbone;
 
 	var array = [];
@@ -222,6 +222,54 @@
 		}
 	}
 
+	// 向后兼容
+	Events.bind = Events.on;
+	Events.unbind = Events.off;
+
+	// 给Backbone对象本身也具有Events的各种属性和方法 
+	_.extend(Backbone, Events);
+
+
+	var Model = Backbone.Model = function(attributes, options){
+		var attrs = attributes || {};
+		options || (options = {});
+		this.cid = _.uniqueId('c');
+		this.attributes = {};
+	}
+
+
+	// 继承方法
+	var extend = function(protoProps, staticProps){
+		// Backbone.Model.extend() 调用时 this指向Model/View/Collection/..
+		var parent = this;
+		var child;
+
+		if( protoProps && _.has(protoProps, 'constructor') ){
+			// 自己定义constructor
+			child = protoProps.constructor;
+		}else{
+			// 
+			child = function(){ return parent.apply(this, arguments); }
+		}
+
+		// 给构造器添加静态属性
+		_.extend(child, parent, staticProps);
+
+		// 
+		var Surrogate = function(){ this.constructor = child; };
+		Surrogate.prototype = parent.prototype;
+		// new Surrogate 等价于 new Surrogate(); 构造函数调用时js中允许省略()
+		// 生成一个新{__proto__: parent.prototype} 原型链继承
+		child.prototype = new Surrogate;
+
+		
+
+	}
+
+
+	// 设置继承
+	Model.extend = extend;
+	 
 	// 返回backbone.对象
 	return Backbone;
 

@@ -84,20 +84,11 @@
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result 鈥� either
   // identity, an arbitrary callback, a property matcher, or a property accessor.
-  // 返回合适的回调
-  //               iteratee, context
   var cb = function(value, context, argCount) {
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
     if (_.isObject(value)) return _.matcher(value);
     return _.property(value);
-
-    // _.property("name")(test_obj)
-    // _.property = function(key) {
-    //   return function(obj) {
-    //     return obj == null ? void 0 : obj[key];
-    //   };
-    // };
   };
   _.iteratee = function(value, context) {
     return cb(value, context, Infinity);
@@ -105,33 +96,18 @@
 
   // An internal function for creating assigner functions.
   var createAssigner = function(keysFunc, undefinedOnly) {
-    // _.keys = function(obj) {
-    //   if (!_.isObject(obj)) return [];
-    //   if (nativeKeys) return nativeKeys(obj);
-    //   var keys = [];
-    //   for (var key in obj) if (_.has(obj, key)) keys.push(key);
-    //   // Ahem, IE < 9.
-    //   if (hasEnumBug) collectNonEnumProps(obj, keys);
-    //   return keys;
-    // };
-    // var keysFunc = _.keys;
-
     return function(obj) {
       var length = arguments.length;
       if (length < 2 || obj == null) return obj;
-
       for (var index = 1; index < length; index++) {
         var source = arguments[index],
             keys = keysFunc(source),
             l = keys.length;
         for (var i = 0; i < l; i++) {
           var key = keys[i];
-          // undefinedOnly, 只覆盖值为undefined的属性
-          // _.defaults();
           if (!undefinedOnly || obj[key] === void 0) obj[key] = source[key];
         }
       }
-
       return obj;
     };
   };
@@ -149,7 +125,6 @@
   // Helper for collection methods to determine whether a collection
   // should be iterated as an array or as an object
   // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
-  // 数组最大长度
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   var isArrayLike = function(collection) {
     var length = collection != null && collection.length;
@@ -179,16 +154,13 @@
   };
 
   // Return the results of applying the iteratee to each element.
-  // 需要一种合适的迭代来处理数据
   _.map = _.collect = function(obj, iteratee, context) {
     iteratee = cb(iteratee, context);
-    // 判断obj是数组还是对象
     var keys = !isArrayLike(obj) && _.keys(obj),
         length = (keys || obj).length,
         results = Array(length);
     for (var index = 0; index < length; index++) {
       var currentKey = keys ? keys[index] : index;
-      // value, key, obj
       results[index] = iteratee(obj[currentKey], currentKey, obj);
     }
     return results;
@@ -207,12 +179,7 @@
     }
 
     return function(obj, iteratee, memo, context) {
-      // obj = [1, 2, 3];
-
       iteratee = optimizeCb(iteratee, context, 4);
-      // iteratee =  function(accumulator, value, index, collection) {
-      //   return func.call(context, accumulator, value, index, collection);
-      // };
       var keys = !isArrayLike(obj) && _.keys(obj),
           length = (keys || obj).length,
           index = dir > 0 ? 0 : length - 1;
@@ -477,7 +444,6 @@
   // Get the first element of an array. Passing **n** will return the first N
   // values in the array. Aliased as `head` and `take`. The **guard** check
   // allows it to work with `_.map`.
-  // guard的用处？
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
     if (n == null || guard) return array[0];
@@ -488,7 +454,6 @@
   // the arguments object. Passing **n** will return all the values in
   // the array, excluding the last N.
   _.initial = function(array, n, guard) {
-    // 为何要用Math.max比较一下大小？
     return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
   };
 
@@ -988,8 +953,6 @@
   // In contrast to _.map it returns an object
   _.mapObject = function(obj, iteratee, context) {
     iteratee = cb(iteratee, context);
-    // keys返回obj的属性名 
-    // 如果obj是数组 则属性名是数组下标
     var keys =  _.keys(obj),
           length = keys.length,
           results = {},
@@ -1110,12 +1073,8 @@
 
   // Returns whether an object has a given set of `key:value` pairs.
   _.isMatch = function(object, attrs) {
-    // var object = {"name": "heke", "age": 26, "company": "Noah"};
-    // var attrs = {"name": "heke"};
     var keys = _.keys(attrs), length = keys.length;
-    // what does this use for ? if object is null, this is usefull;
     if (object == null) return !length;
-    // obj === Object(object) 
     var obj = Object(object);
     for (var i = 0; i < length; i++) {
       var key = keys[i];
@@ -1296,10 +1255,6 @@
     return obj === void 0;
   };
 
-  // _.isUndefined = function(obj, undefined){
-  //   return obj === undefined;
-  // };
-
   // Shortcut function for checking if an object has a given property directly
   // on itself (in other words, not on a prototype).
   _.has = function(obj, key) {
@@ -1346,9 +1301,6 @@
   // Returns a predicate for checking whether an object has a given set of 
   // `key:value` pairs.
   _.matcher = _.matches = function(attrs) {
-    // var ready = _.matcher({selected: true, visible: true});
-    // var readyToGoList = _.filter(list, ready);
-    // _.extendOwn({}, attrs) 复制了一个attrs 
     attrs = _.extendOwn({}, attrs);
     return function(obj) {
       return _.isMatch(obj, attrs);
@@ -1360,8 +1312,6 @@
     var accum = Array(Math.max(0, n));
     iteratee = optimizeCb(iteratee, context, 1);
     for (var i = 0; i < n; i++) accum[i] = iteratee(i);
-    // iterate 为传入的迭代回调函数
-    // func.call(context, value)
     return accum;
   };
 
@@ -1391,8 +1341,6 @@
   var unescapeMap = _.invert(escapeMap);
 
   // Functions for escaping and unescaping strings to/from HTML interpolation.
-
-  
   var createEscaper = function(map) {
     var escaper = function(match) {
       return map[match];
@@ -1429,17 +1377,17 @@
 
   // By default, Underscore uses ERB-style template delimiters, change the
   // following template settings to use alternative delimiters.
-  _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g,
-    escape      : /<%-([\s\S]+?)%>/g
-  };
+  // _.templateSettings = {
+  //   evaluate    : /<%([\s\S]+?)%>/g,
+  //   interpolate : /<%=([\s\S]+?)%>/g,
+  //   escape      : /<%-([\s\S]+?)%>/g
+  // };
 
   _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g,
-    escape      : /<%-([\s\S]+?)%>/g
-  }
+    evaluate    : /{{([\s\S]+?)}}/g,
+    interpolate : /{{=([\s\S]+?)}}/g,
+    escape      : /{{-([\s\S]+?)}}/g
+  };
 
   // When customizing `templateSettings`, if you don't want to define an
   // interpolation, evaluation or escaping regex, we need one that is
