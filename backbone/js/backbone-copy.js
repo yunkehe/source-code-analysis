@@ -235,7 +235,56 @@
 		options || (options = {});
 		this.cid = _.uniqueId('c');
 		this.attributes = {};
-	}
+
+		if(options.collection)this.collection = options.collection;
+		if(options.parse) attrs = this.parse(attrs, options) || {};
+		// _.defaults只覆盖值为undefined的属性
+		attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+
+		this.set(attrs, options);
+		this.changed = {};
+		this.initialize.apply(this, arguments);
+	};
+
+	// 联系上所有继承的方法
+	_.extend(Model.prototype, Events, {
+		changed: null,
+		validationError: null,
+
+		isAttribute: 'id',
+
+		// 一个空方法 构造时可以重写
+		initialize: function(){},
+
+		// 返回属性的副本
+		toJSON: function(){
+			return _.clone(this.attributes);
+		},
+
+		// Backbone.sync方法的代理方法 
+		sync: function(){
+			return Backbone.sync.apply(this, arguments);
+		},
+
+		// 返回一个属性的值
+		get: function(attr){
+			return this.attributes[attr];
+		},
+
+		// 替换html字符为html实体
+		escape: function(attr){
+			return _.escape(this.get(attr));
+		},
+
+		has: function(attr){
+			return this.get(attr) != null;
+		},
+
+		// 代理 _.matches()
+		matches: function(attrs){
+			return _.matches(attrs)(this.attributes);
+		}
+	});
 
 
 	// 继承方法
@@ -261,10 +310,13 @@
 		// new Surrogate 等价于 new Surrogate(); 构造函数调用时js中允许省略()
 		// 生成一个新{__proto__: parent.prototype} 原型链继承
 		child.prototype = new Surrogate;
-
 		
+		
+		if(protoProps) _.extend(child.prototype, protoProps);
+		child.__super__ = parent.prototype;
 
-	}
+		return child;
+	};
 
 
 	// 设置继承
