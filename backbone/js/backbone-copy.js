@@ -251,7 +251,8 @@
 		changed: null,
 		validationError: null,
 
-		isAttribute: 'id',
+		// 哪一个属性作为认证id 默认是id
+		idAttribute: 'id',
 
 		// 一个空方法 构造时可以重写
 		initialize: function(){},
@@ -283,7 +284,102 @@
 		// 代理 _.matches()
 		matches: function(attrs){
 			return _.matches(attrs)(this.attributes);
+		},
+
+		// 利用hash表设置model属性
+		set: function(key, val, options){
+			// attrs 所有属性值
+			var attr, attrs, unset, changes, silent, changing, prev, current;
+			if(key == null) return this;
+
+			// key = {title: "March 20", content: "In his eyes she eclipses..."} 
+			if( typeof key === 'object'){
+				attrs = key;
+				options = val;
+			}else{
+				// "title", "A Scandal in Bohemia"
+				// key = 'title', val = 'A Scandal in Bohemia';
+				(attrs = {})[key] = val;
+			}
+			// attrs 保存传入的对象
+			
+			options || (options = {});
+
+			// 验证 用户自己定义validate方法
+			if(this._validate(attrs, options))return false;
+
+			// 提前属性和参数
+			unset			= options.unset;
+			silent			= options.silent;
+			changes			= [];
+			changing		= this._changing;
+			this._changing	= true;
+
+			// 没有改变之前的属性值
+			if(!changing){
+				this._previousAttributes = _.clone(this.attributes);
+				this.changed = {};
+			}
+
+			// current prev
+			current = this.attributes, prev = this._previousAttributes;
+
+			// 检查id的变化
+			if(this.idAttribute in attrs) this.id = attrs[this.idAttribute];
+
+			// 遍历attrs
+			for( attr in attrs){
+				val = attrs[attr];
+				if(!_.isEqual(current[attr], val)) changes.push(attr);
+				if(!_.isEqual(prev[attr], val)){
+					this.changed.push(attr);	
+				} else {
+					delete this.changed[attr];
+				}
+
+				unset ? delete current[attr] : current[attr] = val;
+			}
+
+			// 触发事件
+			if(!silent){
+				if(changes.length)this._pending = options;
+				for(var i=0, length=changes.length; i<length; i++){
+					this.trigger('change:'+changes[i], this, current[changes[i]], options);
+				}
+			}
+
+			// 在change事件嵌套中 change会被递归调用
+			// 理解trigger的内部机制
+			if(changing) return this;
+			if(!silent){
+				while(this._pending){
+					options = this._pending;
+					this._pending = false;
+					this.trigger('change', this, options);
+				}
+			}
+			this._pending = false;
+			this._changing = false;
+
+			return this;
+
+		},
+
+		// 内部使用 判断验证
+		_validate: function(attrs, options){
+			// 没有设置验证时 总是通过验证
+			if(!options.validate || !this.validate) return true;
+			// 复制一份包含 原来attributes属性和传入attrs的对象
+			attrs = _.extend({}, this.attributes, attrs); 
+			// 验证抛出的错误
+			var error = this.validationError = this.validate(attrs, options) || null;
+			// 没有抛出错误 验证通过
+			if(!error) return true;
+			// 报错 触发invalid事件 
+			this.trigger('invalid', this.error, _.extend(options, {validationError: error}));
+			return false;
 		}
+
 	});
 
 
