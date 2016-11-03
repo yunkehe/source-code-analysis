@@ -463,7 +463,6 @@
 
 	};
 
-
 	// 继承方法
 	var extend = function(protoProps, staticProps){
 		// Backbone.Model.extend() 调用时 this指向Model/View/Collection/..
