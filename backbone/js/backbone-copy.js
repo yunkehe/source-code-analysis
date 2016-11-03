@@ -336,7 +336,7 @@
 				} else {
 					delete this.changed[attr];
 				}
-
+				// this.unset使用 删除指定属性
 				unset ? delete current[attr] : current[attr] = val;
 			}
 
@@ -365,6 +365,79 @@
 
 		},
 
+		// 删除指定属性  
+		unset: function(attr, options){
+			return this.set(attr, void 0, _.extend({}, options, {'unset': true}));
+		},
+
+		// 删除所有属性
+		// 可以传入 silent参数 重置时不触发change事件
+		clear: function(options){
+			var attrs = {};
+			for(var key in this.attributes) attrs[key] = void 0;
+			return this.set(attrs, _.extend({}, options, {'unset': true}));
+		},
+
+		// 不传参数 判断上次change事件之后 是否hasChanged
+		// 实际可以判断上次set新参数后, 是否hasChanged, 即使设置参数时不触发change事件 
+		hasChanged: function(attr){
+			if(attr == null) return !_.isEmpty(this.changed);
+			return _.has(this.changed, attr);
+		},
+
+		// 1. 没有参数时 返回上次set之后 改变的属性hash
+		// 2. 可选参数为 
+		// {'address':'chongqing', 'name': 'he', 'age': 23}
+		// 返回一个object 只包含不同值的属性
+		changedAttributes: function(diff){
+			if(!diff) return this.hasChanged() ? _.clone(this.changed) : false;
+			var val, changed = false;
+			var old = this._changing ? this.previousAttributes : this.attributes;
+			for(var attr in diff){
+				if(_.isEqual(old[attr],( val = diff[attr] ) ))continue;
+				(changed || (changed = {}))[attr] = val;
+			}
+			return changed;
+		},
+
+		// 在事件触发过程中获取previousAttribute的值
+		previous: function(attr){
+			if(attr == null || !this._previousAttributes) return null;
+			return this._previousAttributes[attr];
+		},
+
+		previousAttributes: function(){
+			return _.clone(this._previousAttributes);
+		},
+
+		// 常用方法来了
+		// fetch 想服务器发送请求 更新model状态
+		fetch: function(options){
+			var options = options ? _.clone(options) : {};
+			// 标记是否解析
+			if(options.parse === void 0) options.parse = true;
+			var model = this;
+			var success = options.success;
+			options.success = function(resp){
+				// model.parse
+				if( !model.set(model.parse(resp, options), options)) return false;
+				if(success)success(model, resp, options);
+				model.trigger('sync', model, resp, options);
+			};
+			wrapError(this, options);
+			return this.sync('read', this, options);
+		},
+		
+		// 仅简单返回后台实际返回的response
+		// 可以自己重载进行修改
+		parse: function(resp, options){
+			return resp;
+		},
+
+		// 代理Backbone.sync方法
+		sync: function(){
+			return Backbone.sync.apply(this, arguments);
+		},
 		// 内部使用 判断验证
 		_validate: function(attrs, options){
 			// 没有设置验证时 总是通过验证
@@ -381,6 +454,14 @@
 		}
 
 	});
+/*
+ *
+ * 
+ */
+
+	Backbone.sync = function(method, model, options){
+
+	};
 
 
 	// 继承方法
@@ -418,6 +499,14 @@
 	// 设置继承
 	Model.extend = extend;
 	 
+	var wrapError = function(model, options){
+		var error = options.error;
+		options.error = function(resp){
+			if(error) error(model, resp, options);
+			model.trigger('error', model, resp, options);
+		};
+	};
+
 	// 返回backbone.对象
 	return Backbone;
 

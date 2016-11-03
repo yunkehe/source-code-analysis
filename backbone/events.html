@@ -19,7 +19,7 @@
 	<script src="../public/js/sea-min.js"></script>
 </head>
 <body>
-	<button id="btn">点击一次</button>
+	<!-- <button id="btn">点击一次</button> -->
 	<div class="container">
 		<h4>Backbone对象--绑定事件</h4>
 		<div>
@@ -31,7 +31,18 @@
 </body>
 <script src="js/events.js"></script>
 <script>
-	var testModel = $Backbone.Model.extend({"name": 'testModel'});
+	var testObj = {
+		'name': 'heke',
+		'age': 26,
+		'address': '成都',
+		'company': 'Noah'
+	};
+	
+	var $testModel = $Backbone.Model.extend({"name": 'testModel', age: 18});
+	var testModel = Backbone.Model.extend({"name": 'testModel', age: 18});
+
+	var m1 = new $testModel;
+	var m2 = new testModel;
 	
 	var btn = document.getElementById("btn");
 
@@ -39,7 +50,8 @@
 		alert(1);
 	}
 
-	btn.addEventListener("click", handler, {'capture': true, 'once': true});
+	// 点击一次无效
+	// btn.addEventListener("click", handler, {'capture': true, 'once': true});
 
 	function Fun(){
 		console.log("Fun");
