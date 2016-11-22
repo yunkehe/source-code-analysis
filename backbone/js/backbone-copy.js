@@ -115,6 +115,7 @@
 
 		},
 
+		// 如果被监听对象没有事件, 则绑定一个事件
 		listenTo: function(obj, name, callback){
 			// 监听对象上保存被监听对象, 通过被监听对象_listenId标识
 			var listeningTo = this._listeningTo || (this._listeningTo = {});
@@ -420,6 +421,7 @@
 				// model.parse
 				if( !model.set(model.parse(resp, options), options)) return false;
 				if(success)success(model, resp, options);
+				// 执行哪个方法
 				model.trigger('sync', model, resp, options);
 			};
 			wrapError(this, options);
@@ -481,15 +483,65 @@
 			if(method === 'patch' && !options.attrs) options.attrs = attrs;
 			xhr = this.sync(method, this, options);
 
+			// 存储属性
 			if(attrs && options.wait) this.attributes = attributes;
 
 			return xhr; 
+		},
+
+		// 毁灭证据
+		destroy: function(options){
+			var options = options ? _.clone(options) : {};
+			var model = this;
+			var success = options.success;
+
+			var destroy = function(){
+				model.stopListening();
+				model.trigger('destroy', model, model.collection, options);
+			};
+
+			options.success = function(resp){
+				if(options.wait || options.isNew()) destroy();
+				if(success) success(model, resp, options);
+				if(!model.isNew()) model.trigger('sync', model, resp, options);
+			};
+
+			if(this.isNew()){
+				options.success();
+				return false;
+			}
+			wrapError(this, options);
+
+			var xhr = this.sync('delete', this, options);
+			if(!options.wait) destroy();
+			return xhr;
+		},
+
+		url: function(){
+			var base = 
+			_.result(this, 'urlRoot') ||
+			_.result(this.collection, 'url') ||
+			urlError();
+
+			if(this.isNew()) return base;
+	        return base.replace(/([^\/])$/, '$1/') + encodeURIComponent(this.id);
+	        // 结束位置不是斜杠的所有字符
 		},
 
 		// 仅简单返回后台实际返回的response
 		// 可以自己重载进行修改
 		parse: function(resp, options){
 			return resp;
+		},
+
+		// 返回具有相同属性的新的实例
+		clone: function(){
+			return new this.constructor(this.attributes);
+		},
+
+		// 判断模型是否保存到服务器 如果属性没有id，则被视为新的
+		isNew: function(){
+			return !this.has(this.idAttribute);
 		},
 
 		// 代理Backbone.sync方法
@@ -513,11 +565,48 @@
 		}
 
 	});
-/*
- *
- * 
+
+	var modelMethods = ['keys', 'values', 'pairs', 'invert', 'pick', 'omit', 'chain', 'isEmpty'];
+
+	// 委托underscore的一些方法
+	_.each(modelMethods, function(method){
+		if(!_[method]) return false;
+		Model.prototype[method] = function(){
+			var args = slice.call(arguments);
+			args.unshift(this.attributes);
+			return _[method].apply(_, args);
+		}
+	})
+
+/**
+ * collection
  */
 
+ 	var Collection = Backbone.Collection = function(models, options){
+ 		options || (options = {});
+ 		if(options.model) this.model = options.model;
+ 		if(options.comparator !== void 0) this.comparator = options.comparator;
+ 		this._reset();
+ 		this.initialize.apply(this, arguments);
+ 		if(models) this.reset(models, {silent: true}, options);
+ 	};
+
+ 	// collection#set 默认参数
+ 	var setOptions = {add: true, remove: true, merge: true};
+ 	var addOptions = {add: true, remove: false};
+
+ 	_.extend(Collection.prototype, Events, {
+ 		
+ 		model: Model,
+
+ 		initialize: function(){},
+
+ 		toJSON: function(){
+ 			
+ 		}
+ 	});
+
+ 	// ajax
 	Backbone.sync = function(method, model, options){
 		var type = methodMap[method];
 
@@ -575,6 +664,17 @@
 		'patch': 'PATCH'
 	};
 
+	// 自己配置ajax
+	// Backbone.ajax = function(request) {
+	// 	  utility.getData(request.url,
+	// 			  		  request.data || {},
+	// 			  		  request.success,
+	// 	  				  request.error,
+	// 	  				  request.type,
+	// 	  				  request.dataType,
+	// 	  				  request.complete
+	// 	  );
+	// };
 	Backbone.ajax = function(){
 		return Backbone.$.ajax.apply(Backbone.$, arguments);
 	};
