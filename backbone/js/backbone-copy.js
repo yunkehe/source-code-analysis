@@ -601,10 +601,104 @@
 
  		initialize: function(){},
 
- 		toJSON: function(){
- 			
+ 		toJSON: function(options){
+ 			return this.map(function(model){ return model.toJSON(options); });
+ 		},
+
+ 		sync: function(){
+ 			return Backbone.sync.apply(this, arguments);
+ 		},
+
+ 		add: function(models, options){
+ 			return this.set(models, _.extend({merge: false}, options, addOptions));		
+ 		},
+
+ 		remove: function(models, options){
+			var singular = !_.isArray(models);
+			models = singular ? [models] : _.clone(models);
+			options = options || (options = {});
+
+			for(var i = 0, length = models.length; i<length; i++){
+				var model = models[i] = this.get(models[i]);
+				if(!model) continue;
+				// 获取模型id
+				var id = this.modelId(model.attributes);
+				if(id != null) delete this._byId[id];
+				delete this._byId[model.cid];
+				// 调整collection长度
+				var index = this.indexOf(model);
+				this.models.splice(index, 1);
+				this.length--;
+
+				// 是否触发remove事件
+				if(!options.silent){
+					options.index = index;
+					model.trigger('remove', model, this, options);
+				}
+				// 移除引用
+				this._removeReference(model, options);
+			} 				
+
+			// 返回被移除的models
+			return singular ? models[0] : model;
+ 		},
+
+ 		set: function(models, options){
+
+ 		},
+
+ 		// 通过一个id，一个cid，或者传递一个model来 获得集合中 的模型。
+ 		get: function(obj){
+ 			if(obj == null) return void 0;
+ 			var id = this.modelId(this._isModel(obj) ? obj.attributes : obj);
+ 			return this._byId[obj] || this._byId[id] || this._byId[obj.cid];
+ 		},
+
+ 		_isModel: function(model){
+ 			return model instanceof Model;
+ 		},
+
+ 		_removeReference: function(model, options){
+ 			if(this === model.collection) delete model.collection;
+ 			// 移除collection中model上的事件
+ 			model.off('all', this._onModelEvent, this);
+ 		},
+
+ 		// 定义 确认model唯一性的属性 默认是id
+ 		modelId: function(attrs){
+ 			return attrs[this.model.prototype.idAttribute || 'id'];
+ 		},
+
+ 		// 内部私有重置方法 用于collection第一次初始化
+ 		_reset: function(){
+ 			this.length = 0;
+ 			this.models = [];
+ 			this._byId = {};
  		}
+
  	});
+
+
+ 	// 应用在集合上的underscore方法
+ 	// 90% of the core usefulness of Backbone Collections is actually implemented
+ 	// right here:
+ 	var methods = ['forEach', 'each', 'map', 'collect', 'reduce', 'foldl',
+ 	  'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
+ 	  'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
+ 	  'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
+ 	  'tail', 'drop', 'last', 'without', 'difference', 'indexOf', 'shuffle',
+ 	  'lastIndexOf', 'isEmpty', 'chain', 'sample', 'partition'];
+
+ 	 _.each(methods, function(method){
+ 	 	if(!_[method]) return false;
+ 	 	Collection.prototype[method] = function(){
+ 	 		var args = slice.call(arguments);
+ 	 		// 首位插入models
+ 	 		args.unshift(this.models);
+ 	 		return _[method].apply(_, args);
+ 	 	}
+ 	 })
+
 
  	// ajax
 	Backbone.sync = function(method, model, options){
