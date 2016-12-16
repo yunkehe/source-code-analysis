@@ -644,7 +644,22 @@
  		},
 
  		set: function(models, options){
-
+ 			var options = _defaults({}, options, setOptions);
+ 			if(options.parse) models = this.parse(models, options);
+ 			var singular = !_.isArray(models);
+ 			// 浅复制传入的参数 models仍然是传入的数据
+ 			models = singular ? (models ? [models] : []) : models.slice();
+ 			// 
+ 			var id, model, attrs, exsiting, sort;
+ 			var at = options.at;
+ 			if( at != null ) at = +at;
+ 			if( at < 0 ) at += this.length + 1;
+ 			var sortable = this.comparator && (at == null) && options.sort !== false;
+ 			var sortAttr = _.isString(this.comparator) ? this.comparator : null;
+ 			var toAdd = [], toRemove = [], modelMap = {};
+ 			var add = options.add, merge = options.merge, remove = options.remove;
+ 			var order = !sortable && add && remove ? [] : false;
+ 			var orderChanged = false;
  		},
 
  		// 通过一个id，一个cid，或者传递一个model来 获得集合中 的模型。
