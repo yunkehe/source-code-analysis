@@ -660,6 +660,8 @@
  			var add = options.add, merge = options.merge, remove = options.remove;
  			var order = !sortable && add && remove ? [] : false;
  			var orderChanged = false;
+
+ 			
  		},
 
  		// 通过一个id，一个cid，或者传递一个model来 获得集合中 的模型。
