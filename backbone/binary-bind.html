@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>双向数据绑定</title>
+	<link rel="stylesheet" href="">
+	<!-- <script type="text/javascript" src="../public/js/jquery-1.7.2.min.js"></script> -->
+	<script type="text/javascript" src="../public/js/jquery-1.12.4.js"></script>
+	<script type="text/javascript" src="../public/js/underscore-min.js"></script>
+	<!-- <script type="text/javascript" src="../public/js/backbone-min.js"></script> -->
+	<script src="http://cdn.bootcss.com/backbone.js/1.0.0/backbone.js"></script>
+</head>
+<body>
+	<h3>双向数据绑定</h3>
+	<div id="hztxEditor">
+		
+	</div>
+</body>
+<script>
+	var model = new Backbone.Model({name:'Jack'});
+
+	var MainView = Backbone.View.extend({
+		
+		el: $('#hztxEditor'),
+
+		events: {
+			'click #show' : 'show',
+			'keyup .name-input': '_changeName'
+		},
+		
+	    initialize:function(){
+	    	var template = '<input type="text" class="name-input"><span class="name"></span><button id="show">显示</button>';
+	    	console.log('dfhe', this.template, this.el)
+
+	    	this.model = model;
+	        this.listenTo(this.model,'change:name',this.onNameChange);
+	        this.render()
+	        // this.delegateEvents()
+	    },
+
+	    render: function(){
+	    	console.log('tpl', this.$el);
+	    	var template = '<input type="text" class="name-input"><span class="name"></span><button id="show">显示</button>';
+
+	    	 this.$el.html(template);
+	    },
+	    onNameChange:function(){
+	        console.log('model param: ', this.model.get('name'))
+	        $('.name').text(this.model.get('name'));
+	    },
+	    
+	    show: function(){
+	    	console.log('test')
+	    },
+	    _changeName: function(e){
+	    	console.log('value: ', e.currentTarget);
+	    	var value = e.currentTarget.value;
+	    	this.model.set({name: value});
+	    	return false;
+	    },
+
+	});
+
+	var mainView = new MainView();
+
+</script>
+</html>
