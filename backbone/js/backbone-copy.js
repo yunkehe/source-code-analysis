@@ -644,24 +644,74 @@
  		},
 
  		set: function(models, options){
- 			var options = _defaults({}, options, setOptions);
- 			if(options.parse) models = this.parse(models, options);
- 			var singular = !_.isArray(models);
- 			// 浅复制传入的参数 models仍然是传入的数据
- 			models = singular ? (models ? [models] : []) : models.slice();
- 			// 
- 			var id, model, attrs, exsiting, sort;
+ 			// set fun
+ 			options = _.defaults(options || {}, setOptions);
+ 			if (options.parse) models = this.parse(models, options);
+ 			if (!_.isArray(models)) models = models ? [models] : [];
+ 			var i, l, model, attrs, existing, sort;
  			var at = options.at;
- 			if( at != null ) at = +at;
- 			if( at < 0 ) at += this.length + 1;
  			var sortable = this.comparator && (at == null) && options.sort !== false;
  			var sortAttr = _.isString(this.comparator) ? this.comparator : null;
  			var toAdd = [], toRemove = [], modelMap = {};
- 			var add = options.add, merge = options.merge, remove = options.remove;
- 			var order = !sortable && add && remove ? [] : false;
- 			var orderChanged = false;
 
- 			
+ 			// Turn bare objects into model references, and prevent invalid models
+ 			// from being added.
+ 			for (i = 0, l = models.length; i < l; i++) {
+ 			  if (!(model = this._prepareModel(models[i], options))) continue;
+
+ 			  // If a duplicate is found, prevent it from being added and
+ 			  // optionally merge it into the existing model.
+ 			  if (existing = this.get(model)) {
+ 			    if (options.remove) modelMap[existing.cid] = true;
+ 			    if (options.merge) {
+ 			      existing.set(model.attributes, options);
+ 			      if (sortable && !sort && existing.hasChanged(sortAttr)) sort = true;
+ 			    }
+
+ 			  // This is a new model, push it to the `toAdd` list.
+ 			  } else if (options.add) {
+ 			    toAdd.push(model);
+
+ 			    // Listen to added models' events, and index models for lookup by
+ 			    // `id` and by `cid`.
+ 			    model.on('all', this._onModelEvent, this);
+ 			    this._byId[model.cid] = model;
+ 			    if (model.id != null) this._byId[model.id] = model;
+ 			  }
+ 			}
+
+ 			// Remove nonexistent models if appropriate.
+ 			if (options.remove) {
+ 			  for (i = 0, l = this.length; i < l; ++i) {
+ 			    if (!modelMap[(model = this.models[i]).cid]) toRemove.push(model);
+ 			  }
+ 			  if (toRemove.length) this.remove(toRemove, options);
+ 			}
+
+ 			// See if sorting is needed, update `length` and splice in new models.
+ 			if (toAdd.length) {
+ 			  if (sortable) sort = true;
+ 			  this.length += toAdd.length;
+ 			  if (at != null) {
+ 			    splice.apply(this.models, [at, 0].concat(toAdd));
+ 			  } else {
+ 			    push.apply(this.models, toAdd);
+ 			  }
+ 			}
+
+ 			// Silently sort the collection if appropriate.
+ 			if (sort) this.sort({silent: true});
+
+ 			if (options.silent) return this;
+
+ 			// Trigger `add` events.
+ 			for (i = 0, l = toAdd.length; i < l; i++) {
+ 			  (model = toAdd[i]).trigger('add', model, this, options);
+ 			}
+
+ 			// Trigger `sort` if the collection was sorted.
+ 			if (sort) this.trigger('sort', this, options);
+ 			return this;
  		},
 
  		// 通过一个id，一个cid，或者传递一个model来 获得集合中 的模型。
@@ -691,7 +741,37 @@
  			this.length = 0;
  			this.models = [];
  			this._byId = {};
+ 		},
+
+ 		_prepareModel: function(attrs, options){
+ 			// 如果attrs属于model
+ 			if(attrs instanceof Model){
+ 				if(!attrs.collection) attrs.collection = this;
+ 				return attrs;
+ 			}
+
+ 			options || (options = {});
+ 			options.collection = this;
+ 			// 上层model 初始化传入的model 如果未传入model 则使用Backbone.Model
+ 			var model = new this.model(attrs, options);
+ 			if(!model._validate(attrs, options)){
+ 				this.trigger('invalid', model, attrs, options);
+ 				return false;
+ 			}
+
+ 			return model;
+ 		},
+
+ 		_onModelEvent: function(event, model, collection, options){
+ 			if( (event === 'add' || event === 'remove') && collection !== this) return;
+ 			if(event === 'destroy') this.remove(model, options);
+ 			if(model && event === 'change:' + model.idAttribute ){
+ 				delete this._byId[model.previous(model.idAttribute)];
+ 				if(model.id != null) this._byId[model.id] = model; 
+ 			}
+ 			this.trigger.apply(this, arguments);
  		}
+
 
  	});
 
