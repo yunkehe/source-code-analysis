@@ -797,6 +797,77 @@
  	 })
 
 
+ 	 var attributeMethods = ['groupBy', 'countBy', 'sortBy'];
+
+ 	 _.each(attributeMethods, function(method){
+ 	 	Collection.prototype[method] = function (value, context) {
+ 	 		var iterator = _.isFunction(value) ? value : function(model){
+ 	 			return model.get(value);
+ 	 		}
+
+ 	 		return _[method](this.models, iterator, context);
+ 	 	}
+ 	 });
+
+
+ 	 // Backbone.View
+ 	 var View = Backbone.View = function(options){
+ 	 	this.cid = _.uniqueId('view');
+ 	 	this._configure(options || {});
+ 	 	this._ensureElement();
+ 	 	// 初始化
+ 	 	this.initialize.apply(this, arguments);
+
+ 	 	// 代理事件
+ 	 	this.delegateEvents();
+ 	 };
+
+ 	 // 代理事件分隔正则
+ 	 var delegateEventSplitter = /^(\S+)\s*(.*)$/;
+
+ 	 // 作为属性添加到view上
+	 var viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName', 'events'];
+
+ 	 // View的方法
+ 	 _.extend(View.prototype, Events, {
+
+ 	 	// view的默认元素是div
+ 	 	tagName: 'div',
+
+ 	 	$: function(selector){
+ 	 		return this.$el.find(selector);
+ 	 	},
+
+ 	 	initialize: function(){},
+
+ 	 	render: function(){
+ 	 		return this;
+ 	 	},
+
+ 	 	remove: function(){
+ 	 		this.$el.remove();
+ 	 		this.stopListening();
+ 	 		return this;
+ 	 	},
+
+ 	 	setElement: function(element, delegate){
+ 	 		if(this.$el) this.undelegateEvents();
+
+ 	 	},
+
+ 	 	_configure: function(options){
+ 	 		if(this.options) options = _.extend({}, _.result(this, 'options'), options);
+ 	 		// viewOptions里的参数 直接加载view本身上面
+ 	 		_.extend(this, _.pick(options, viewOptions));
+ 	 		this.options = options;
+ 	 	},
+
+ 	 	_ensureElement: function(){
+
+ 	 	},
+
+ 	 });
+ 	 
  	// ajax
 	Backbone.sync = function(method, model, options){
 		var type = methodMap[method];
