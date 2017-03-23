@@ -1405,11 +1405,13 @@
       return map[match];
     };
     // Regexes for identifying a key that needs to be escaped
+    // 匹配escapeMap中的特殊字符
     var source = '(?:' + _.keys(map).join('|') + ')';
     var testRegexp = RegExp(source);
     var replaceRegexp = RegExp(source, 'g');
     return function(string) {
       string = string == null ? '' : '' + string;
+      // 若存在 html特殊字符 则用html实体将其替换掉
       return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
     };
   };
@@ -1493,10 +1495,13 @@
       index = offset + match.length;
 
       if (escape) {
+        // 用于显示html内容
         source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
       } else if (interpolate) {
+        // 显示插入的值
         source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
       } else if (evaluate) {
+        // 拼接 js代码
         source += "';\n" + evaluate + "\n__p+='";
       }
 
@@ -1513,6 +1518,7 @@
       source + 'return __p;\n';
 
     try {
+      // 最后一个参数为函数体 前面的参数为匿名函数的参数
       var render = new Function(settings.variable || 'obj', '_', source);
     } catch (e) {
       e.source = source;

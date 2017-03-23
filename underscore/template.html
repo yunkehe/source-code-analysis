@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>chaining链式语法</title>
+	<script src="../underscore/js/underscore.copy.js"></script>
+
+	<!-- 新 Bootstrap 核心 CSS 文件 -->
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
+
+	<!-- 可选的Bootstrap主题文件（一般不用引入） -->
+	<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+
+	<!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+	<script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+
+	<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+	<script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+	<div class="container">
+		<h2>_.template源码分析</h2>
+	</div>
+</body>
+<script>
+	// js方法如何运行
+	var str = '<% for(var i=0; i<3; i++){ %><span><%= i %></span><% } %> <p><%= data.name %></p>';
+	// 模板里面用data取值 不用with语句 效率最高
+	var compile = _.template(str, {variable: 'data'});
+	var html = compile({name: 'heke'});
+
+	// 使用print方法时 会将当前作用域变量的值拼接在__p上 
+	// __p为实际的拼接字符
+	// var source = "var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};with(obj||{}){__p+=''; for(var i=0; i<3; i++){ __p+='<span>'+((__t=( i ))==null?'':__t)+'</span>'; } __p+='';}return __p;"
+
+	// compile函数
+	// var render = new Function('obj', '_', source);
+
+</script>
+</html>
