@@ -838,6 +838,7 @@
  	 		return this.$el.find(selector);
  	 	},
 
+ 	 	// 初始化
  	 	initialize: function(){},
 
  	 	render: function(){
@@ -852,7 +853,39 @@
 
  	 	setElement: function(element, delegate){
  	 		if(this.$el) this.undelegateEvents();
+ 	 		this.$el = element instanceof Backbone.$ ? element : Backbone.$(element);
+ 	 		this.el = this.$el[0];
+ 	 		if( delegate !== false ) this.delegateEvents();
+ 	 		return this;
+ 	 	},
 
+ 	 	// 事件委托绑定
+ 	 	delegateEvents: function(events){
+ 	 		if(!(events || (events = _.result(this, 'events')))) return this;
+ 	 		this.undelegateEvents();
+
+ 	 		for(var key in events){
+ 	 			var method = events[key];
+ 	 			if(!_.isFunction(method)) method = this[events[key]];
+ 	 			if(!method) continue;
+
+ 	 			var match = key.match(delegateEventSplitter);
+ 	 			var eventName = match[1], selector = match[2];
+ 	 			method = _.bind(method, this);
+ 	 			eventName += '.delegateEvents' + this.cid;
+ 	 			if(selector === ''){
+ 	 				this.$el.on(eventName, method);
+ 	 			}else{
+ 	 				this.$el.on(eventName, selector, method);
+ 	 			}
+ 	 		}
+
+ 	 		return this;
+ 	 	},
+
+ 	 	undelegateEvents: function(){
+ 	 		this.$el.off('.delegateEvents' + this.cid);
+ 	 		return this;
  	 	},
 
  	 	_configure: function(options){
@@ -863,7 +896,15 @@
  	 	},
 
  	 	_ensureElement: function(){
-
+ 	 		if(!this.el){
+ 	 			var attrs = _.extend({}, _.result(this, 'attributes'));
+ 	 			if(this.id) attrs.id = _.result(this, 'id');
+ 	 			if(this.className) attrs['class'] = _.result(this, 'className');
+ 	 			var $el = Backbone.$('<' + _.result(this, 'tagName') + '>').attr(attrs);
+ 	 			this.setElement($el, false);
+ 	 		}else{
+ 	 			this.setElement(_.result(this, 'el'), false);
+ 	 		}
  	 	},
 
  	 });
@@ -940,6 +981,28 @@
 	Backbone.ajax = function(){
 		return Backbone.$.ajax.apply(Backbone.$, arguments);
 	};
+
+	// Backbone.Router
+	var Router = Backbone.Router = function(options){
+		options || (options = {});
+		if(options.routes) this.routes = options.routes;
+		this._bindRoutes();
+		this.initialize.apply(this, arguments);
+	};
+
+	var optionsParams = /\((.*?)\)/g;
+	var nameParam = /(\(\?)?:\w+/g;
+	var slateParam = /\*\w+/g;
+	var escapeRegExp = /[]/;
+
+	_.extend(Router.prototype, Events, {
+
+		initialize: function(){},
+
+		route: function(){
+
+		}
+	});
 
 	// 继承方法
 	var extend = function(protoProps, staticProps){

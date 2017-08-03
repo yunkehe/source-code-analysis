@@ -14,11 +14,11 @@
 	<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
 	<script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
 	<!-- <script src="../public/js/underscore-min.js"></script> -->
-	<script src="../public/js/underscore2.js"></script>
+	<script src="../public/js/underscore-min.js"></script>
 	<script src="../public/js/backbone-1.1.2.min.js"></script>
 	<script src="../public/js/sea-min.js"></script>
 	<script src="../public/js/seajs-text-debug.js"></script>
-	<script src="../public/js/vue.js"></script>
+	<!-- <script src="../public/js/vue.js"></script> -->
 	<script src="js/likeVue.js"></script>
 </head>
 <body>
@@ -44,7 +44,7 @@
 
 		<div id="app2">
 		  <p id="test">{{= message }}</p>
-		  <input v-model="message">
+		  <input v-model="message" />
 		  <p><span v-model="age"></span></p>
 		</div>
 
