@@ -711,6 +711,7 @@ var uid = 0;
 /**
  * A dep is an observable that can have multiple
  * directives subscribing to it.
+ * 依赖收集
  */
 var Dep = function Dep () {
   this.id = uid++;
@@ -760,6 +761,7 @@ function popTarget () {
  */
 
 var arrayProto = Array.prototype;
+// 数组原始方法
 var arrayMethods = Object.create(arrayProto);[
   'push',
   'pop',
@@ -772,9 +774,10 @@ var arrayMethods = Object.create(arrayProto);[
 .forEach(function (method) {
   // cache original method
   var original = arrayProto[method];
+  // 重置数组 中的 'push' 'pop' 等7个方法
   def(arrayMethods, method, function mutator () {
     var arguments$1 = arguments;
-
+    // 复制arguments要比直接使用arguments运行速度快
     // avoid leaking arguments:
     // http://jsperf.com/closure-with-arguments
     var i = arguments.length;
@@ -782,9 +785,15 @@ var arrayMethods = Object.create(arrayProto);[
     while (i--) {
       args[i] = arguments$1[i];
     }
+    // 获取到利用数组原始方法返回的值
+    // 原数组为 a = [{k: 11}, {k: 22}]
+    // a.pop()之后 a = [{k: 22}]
     var result = original.apply(this, args);
+
     var ob = this.__ob__;
     var inserted;
+    // 将数组中新添加的内容也加上观察者
+    // 数组中原有的值已经有了观察者
     switch (method) {
       case 'push':
         inserted = args;
@@ -793,9 +802,15 @@ var arrayMethods = Object.create(arrayProto);[
         inserted = args;
         break
       case 'splice':
+      // array.slice(0, 1, 'frank', 'green')
+      // args = [0, 1, 'frank', 'green']
+      // 实际插入的值是 ['frank', 'green']
+    
         inserted = args.slice(2);
         break
     }
+    // 如果没有向数组添加新的值 直接返回原来的值即可
+    // 如果添加了新的值 给新的值挂载数组对象
     if (inserted) { ob.observeArray(inserted); }
     // notify change
     ob.dep.notify();
@@ -821,21 +836,30 @@ var observerState = {
 /**
  * Observer class that are attached to each observed
  * object. Once attached, the observer converts target
- * object's property keys into getter/setters that
+ * object's proper     ty keys into getter/setters that
  * collect dependencies and dispatches updates.
  */
 var Observer = function Observer (value) {
   this.value = value;
   this.dep = new Dep();
   this.vmCount = 0;
+  /*
+    将Observer实例绑定到data的__ob__属性上面去，之前说过observe的时候会先检测是否已经有__ob__对象存放Observer实例了，def方法定义可以参考https://github.com/vuejs/vue/blob/dev/src/core/util/lang.js#L16
+    */
   def(value, '__ob__', this);
+
   if (Array.isArray(value)) {
+    // 是否可以使用 __
     var augment = hasProto
-      ? protoAugment
-      : copyAugment;
+      ? protoAugment /*直接覆盖原型的方法来修改目标对象*/
+      : copyAugment;  /*定义（覆盖）目标对象或数组的某一个方法*/
+    // value 是原来的数组
+    // arrayMethods是数组的原型链
     augment(value, arrayMethods, arrayKeys);
+    // 给数组中的每个值挂载观察者对象
     this.observeArray(value);
   } else {
+    // 如果是对象直接进行绑定
     this.walk(value);
   }
 };
@@ -845,6 +869,14 @@ var Observer = function Observer (value) {
  * getter/setters. This method should only be called when
  * value type is Object.
  */
+// 将对象所有属性转换为 getter/setters 观察者模式
+// var obj = {name: 'heke', age: 28}
+/*obj = {
+  get name(){}
+  set name(){}
+  get age(){}
+  set age(){}
+}*/
 Observer.prototype.walk = function walk (obj) {
   var keys = Object.keys(obj);
   for (var i = 0; i < keys.length; i++) {
@@ -878,6 +910,7 @@ function protoAugment (target, src) {
  * hidden properties.
  */
 /* istanbul ignore next */
+/*定义（覆盖）目标对象或数组的某一个方法*/
 function copyAugment (target, src, keys) {
   for (var i = 0, l = keys.length; i < l; i++) {
     var key = keys[i];
@@ -890,14 +923,17 @@ function copyAugment (target, src, keys) {
  * returns the new observer if successfully observed,
  * or the existing observer if the value already has one.
  */
+// 尝试创建一个 observe实例
 function observe (value, asRootData) {
   if (!isObject(value)) {
     return
   }
   var ob;
+   /*这里用__ob__这个属性来判断是否已经有Observer实例，如果没有Observer实例则会新建一个Observer实例并赋值给__ob__这个属性，如果已有Observer实例则直接返回该Observer实例*/
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__;
   } else if (
+    /*这里的判断是为了确保value是单纯的对象，而不是函数或者是Regexp等情况。*/
     observerState.shouldConvert &&
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
@@ -906,6 +942,7 @@ function observe (value, asRootData) {
   ) {
     ob = new Observer(value);
   }
+  /*如果是根数据则计数，后面Observer中的observe的asRootData非true*/
   if (asRootData && ob) {
     ob.vmCount++;
   }
@@ -924,6 +961,7 @@ function defineReactive$$1 (
   var dep = new Dep();
 
   var property = Object.getOwnPropertyDescriptor(obj, key);
+  // 如果属性不可配置 不会触发观察者
   if (property && property.configurable === false) {
     return
   }
@@ -931,13 +969,15 @@ function defineReactive$$1 (
   // cater for pre-defined getter/setters
   var getter = property && property.get;
   var setter = property && property.set;
-
+  // 递归给对象所有子层级添加观察者
   var childOb = observe(val);
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      // 如果已经添加过getter 则直接从getter获取值
       var value = getter ? getter.call(obj) : val;
+      // 看不懂 dep
       if (Dep.target) {
         dep.depend();
         if (childOb) {
@@ -951,10 +991,12 @@ function defineReactive$$1 (
     },
     set: function reactiveSetter (newVal) {
       var value = getter ? getter.call(obj) : val;
+      // 比较新的值和原始值是否相等
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
       }
+      // 用户自己添加的setter先执行 
       /* eslint-enable no-self-compare */
       if ("development" !== 'production' && customSetter) {
         customSetter();
@@ -965,6 +1007,7 @@ function defineReactive$$1 (
         val = newVal;
       }
       childOb = observe(newVal);
+      // 订阅者通知改变
       dep.notify();
     }
   });
@@ -1629,7 +1672,9 @@ var initProxy;
   };
 }
 
-/*  */
+/**
+ * Virtual DOM 对真实DOM的抽象
+ */
 
 var VNode = function VNode (
   tag,
@@ -1653,8 +1698,10 @@ var VNode = function VNode (
   this.componentInstance = undefined;
   this.parent = undefined;
   this.raw = false;
+  // 是否为静态节点
   this.isStatic = false;
   this.isRootInsert = true;
+  // 是否为注释节点
   this.isComment = false;
   this.isCloned = false;
   this.isOnce = false;
@@ -2716,6 +2763,7 @@ var uid$2 = 0;
  * A watcher parses an expression, collects dependencies,
  * and fires callback when the expression value changes.
  * This is used for both the $watch() api and directives.
+ * 观察者对象
  */
 var Watcher = function Watcher (
   vm,
@@ -2724,6 +2772,7 @@ var Watcher = function Watcher (
   options
 ) {
   this.vm = vm;
+  /*_watchers存放订阅者实例*/
   vm._watchers.push(this);
   // options
   if (options) {
@@ -2957,6 +3006,7 @@ var sharedPropertyDefinition = {
   set: noop
 };
 
+// 代理
 function proxy (target, sourceKey, key) {
   sharedPropertyDefinition.get = function proxyGetter () {
     return this[sourceKey][key]
@@ -3032,6 +3082,7 @@ function initProps (vm, propsOptions) {
 }
 
 function initData (vm) {
+  // 得到data数据
   var data = vm.$options.data;
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
@@ -3049,12 +3100,14 @@ function initData (vm) {
   var props = vm.$options.props;
   var i = keys.length;
   while (i--) {
+    // 保证data中的key不与props中的key重复，props优先，有冲突的话会产生warnig 
     if (props && hasOwn(props, keys[i])) {
       "development" !== 'production' && warn(
         "The data property \"" + (keys[i]) + "\" is already declared as a prop. " +
         "Use prop default value instead.",
         vm
       );
+      // 属性不能以 $ 或 _ 开头 
     } else if (!isReserved(keys[i])) {
       proxy(vm, "_data", keys[i]);
     }
@@ -5285,7 +5338,16 @@ function createPatchFunction (backend) {
       return node.nodeType === (vnode.isComment ? 8 : 3)
     }
   }
-
+  /**
+   * [运用diff算法得出新旧VNode节点差异]
+   * @param  {[type]} oldVnode   [description]
+   * @param  {[type]} vnode      [description]
+   * @param  {[type]} hydrating  [description]
+   * @param  {[type]} removeOnly [description]
+   * @param  {[type]} parentElm  [description]
+   * @param  {[type]} refElm     [description]
+   * @return {[type]}            [description]
+   */
   return function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) { invokeDestroyHook(oldVnode); }
