@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试数组</title>
+    <script src="../public/js/vue-2.3.4.js"></script>
+</head>
+<body>
+    <div id="app"></div>
+</body>
+<script type="text/javascript">
+    let tpl = `<div>
+                <h2>{{person.name}}/{{person.job}}</h2>
+                <ul>
+                    <li v-for="li in list"><b>{{li.name}}</b><span>{{li.age}}</span></li>
+                </ul>
+                <ul>
+                    <li v-for="li in list2"><i>{{li}}</i></li>
+                </ul>
+            </div>`;
+
+    const vm = new Vue({
+        el: '#app',
+        template: tpl,
+        data: {
+            person: {
+                name: '何珂',
+                job: 'web前端'
+            },
+
+            list: [{
+                'name': 'heke',
+                'age': 28
+            }, {
+                'name': 'heke2',
+                'age': 18
+            }],
+
+            list2: ['heke', 'name', 'age']
+        },
+
+        created() {
+            setTimeout(() => {
+                // this.list[0].name = 'haha';
+                // this.list.pop();
+                // this.list2[2] = 'hahah';
+                this.list2[3] = 'hahah';
+            }, 1000);   
+        }
+    })
+</script>
+</html>
