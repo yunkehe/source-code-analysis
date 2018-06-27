@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test livereload</title>
+</head>
+<body>
+    <h2>test er livereload re</h2>
+    <div id="info"></div>
+</body>
+<script type="text/javascript">
+    var text = 'hello livereload';
+    document.getElementById('info').innerHTML = text;
+</script>
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+</html>

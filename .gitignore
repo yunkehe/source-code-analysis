@@ -1,0 +1,10 @@
+/.idea
+/node_modules
+/.svn
+/*.zip
+/.project
+/yarn-error.log
+/logs
+package-lock.json
+/dist
+.vscode/launch.json

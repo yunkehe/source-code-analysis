@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试-watcher</title>
+    <script src="../public/js/vue-2.3.4.js"></script>
+</head>
+<body>
+    <div id="app"></div>
+</body>
+<script type="text/javascript">
+    let tpl = `<div>
+                    当前节点的文本
+                    <h2>{{person.name}}/{{person.job}}</h2>
+                测试文本节点
+                <ul>
+                    <li v-for="(item, index) in lists" :key="index"><span>{{item.name}}</span> <span>{{item.age}}</span></li>
+                </ul>
+             </div>`;
+
+    const vm = new Vue({
+        el: '#app',
+        template: tpl,
+        data: {
+            person: {
+                name: 'Ke ',
+                job: 'frontend',
+                gender: 'male',
+                age: '28',
+                address: '成都市天府新区华阳街道'
+            },
+
+            lists: [{
+                name: 'ner',
+                age: 3
+            }, {
+                name: 'h',
+                age: 5
+            }]
+        },
+
+        created() {
+            setTimeout(() => {
+
+            }, 1000);   
+        }
+    })
+</script>
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+</html>
